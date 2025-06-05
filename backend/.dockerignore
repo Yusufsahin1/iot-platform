@@ -1,0 +1,30 @@
+# Git
+.git
+.gitignore
+
+# Maven
+target/
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE files
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Local env files
+.env
+*.env.*.local
+
+# Secrets - should be handled via environment variables or Docker secrets
+secrets/
+*.pem
+*.key
