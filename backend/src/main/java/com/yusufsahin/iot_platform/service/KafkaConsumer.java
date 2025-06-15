@@ -17,9 +17,11 @@ public class KafkaConsumer {
     private static final String GROUP_ID = "iot-platform-group";
 
     private final ObjectMapper objectMapper;
+    private final WebSocketService webSocketService;
 
-    public KafkaConsumer(ObjectMapper objectMapper) {
+    public KafkaConsumer(ObjectMapper objectMapper, WebSocketService webSocketService) {
         this.objectMapper = objectMapper;
+        this.webSocketService = webSocketService;
         // Module to deserialize LocalDateTime correctly
         this.objectMapper.registerModule(new JavaTimeModule());
         this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -33,6 +35,11 @@ public class KafkaConsumer {
             //log.info("Deserialized SensorDataDto: {}", sensorDataDto);
 
             // DB
+            //sensorDataService.processSensorData(sensorDataDto);
+            //log.debug("Processed sensor data: {}", sensorDataDto);
+
+            webSocketService.sendSensorData(sensorDataDto);
+            log.info("Sent sensor data to WebSocket: {}", sensorDataDto);
 
             System.out.println("Consumed and deserialized: " + sensorDataDto.toString());
 
