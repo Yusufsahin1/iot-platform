@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "sensors")
+@Table(name = "sensors", schema = "iot_platform")
 public class SensorData {
 
     @Id

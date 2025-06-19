@@ -18,10 +18,12 @@ public class KafkaConsumer {
 
     private final ObjectMapper objectMapper;
     private final WebSocketService webSocketService;
+    private final SensorDataService sensorDataService;
 
-    public KafkaConsumer(ObjectMapper objectMapper, WebSocketService webSocketService) {
+    public KafkaConsumer(ObjectMapper objectMapper, WebSocketService webSocketService, SensorDataService sensorDataService) {
         this.objectMapper = objectMapper;
         this.webSocketService = webSocketService;
+        this.sensorDataService = sensorDataService;
         // Module to deserialize LocalDateTime correctly
         this.objectMapper.registerModule(new JavaTimeModule());
         this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -35,7 +37,7 @@ public class KafkaConsumer {
             //log.info("Deserialized SensorDataDto: {}", sensorDataDto);
 
             // DB
-            //sensorDataService.processSensorData(sensorDataDto);
+            sensorDataService.processAndSaveSensorData(sensorDataDto);
             //log.debug("Processed sensor data: {}", sensorDataDto);
 
             webSocketService.sendSensorData(sensorDataDto);

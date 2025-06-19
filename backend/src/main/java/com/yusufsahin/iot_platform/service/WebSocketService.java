@@ -1,5 +1,6 @@
 package com.yusufsahin.iot_platform.service;
 
+import com.yusufsahin.iot_platform.dto.AlertMessageDto;
 import com.yusufsahin.iot_platform.dto.SensorDataDto;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -17,5 +18,7 @@ public class WebSocketService {
         simpMessagingTemplate.convertAndSend("/topic/sensor-data", sensorData);
     }
 
-    // Alert
+    public void sendAlert(AlertMessageDto alertMessage) {
+        simpMessagingTemplate.convertAndSend("/topic/alert", alertMessage);
+    }
 }

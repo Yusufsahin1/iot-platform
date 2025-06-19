@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "alert_messages")
+@Table(name = "alert_messages", schema = "iot_platform")
 public class AlertMessage {
 
     @Id

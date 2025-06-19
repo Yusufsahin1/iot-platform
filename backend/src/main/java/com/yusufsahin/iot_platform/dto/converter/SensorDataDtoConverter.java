@@ -17,4 +17,18 @@ public class SensorDataDtoConverter {
             sensorData.getBatteryLevel()
         );
     }
+
+    public static SensorData toEntity(SensorDataDto sensorDataDto) {
+        SensorData sensorData = new SensorData();
+        sensorData.setId(sensorDataDto.id());
+        sensorData.setDeviceId(sensorDataDto.deviceId());
+        sensorData.setTemperature(sensorDataDto.temperature());
+        sensorData.setHumidity(sensorDataDto.humidity());
+        sensorData.setPressure(sensorDataDto.pressure());
+        sensorData.setTimestamp(sensorDataDto.timestamp());
+        sensorData.setLocation(sensorDataDto.location());
+        sensorData.setBatteryLevel(sensorDataDto.batteryLevel());
+        return sensorData;
+    }
+
 }
