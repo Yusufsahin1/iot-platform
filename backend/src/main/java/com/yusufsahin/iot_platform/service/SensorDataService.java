@@ -4,9 +4,13 @@ import com.yusufsahin.iot_platform.dto.SensorDataDto;
 import com.yusufsahin.iot_platform.dto.converter.SensorDataDtoConverter;
 import com.yusufsahin.iot_platform.model.SensorData;
 import com.yusufsahin.iot_platform.repository.SensorDataRepository;
-import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
+@Slf4j
 @Service
 public class SensorDataService {
 
@@ -28,6 +32,14 @@ public class SensorDataService {
 
         return SensorDataDtoConverter.toDto(savedSensorData);
 
+    }
+
+    public List<SensorDataDto> getAllSensorData() {
+        return sensorDataRepository.findAll().stream().map(SensorDataDtoConverter::toDto).toList();
+    }
+
+    public List<SensorDataDto> getSensorDataByDeviceId(String deviceId) {
+        return sensorDataRepository.findByDeviceId(deviceId).stream().map(SensorDataDtoConverter::toDto).toList();
     }
 
 }
