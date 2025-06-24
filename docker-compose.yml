@@ -9,12 +9,9 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/iot_platform
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=1
-      - SPRING_REDIS_HOST=redis
-      - SPRING_REDIS_PORT=6379
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     depends_on:
       - db
-      - redis
       - kafka
     networks:
       - iot-network
@@ -40,13 +37,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - iot-network
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
     networks:
       - iot-network
 
