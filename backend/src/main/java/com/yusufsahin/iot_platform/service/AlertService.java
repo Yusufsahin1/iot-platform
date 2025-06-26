@@ -22,8 +22,11 @@ public class AlertService {
 
     private static final double HIGH_TEMPERATURE_THRESHOLD = 30.0; // 30°C
     private static final double LOW_TEMPERATURE_THRESHOLD = 5.0;   // 5°C
-    private static final int LOW_BATTERY_THRESHOLD = 20;        // %20 Pil Seviyesi
-    private static final double HIGH_HUMIDITY_THRESHOLD = 70.0;  // %70 Nem
+    private static final int LOW_BATTERY_THRESHOLD = 20;        // %20 Battery Level
+    private static final double HIGH_HUMIDITY_THRESHOLD = 70.0;  // %70 Humidity
+    private static final double LOW_HUMIDITY_THRESHOLD = 30.0;   // %30 Humidity
+    private static final double HIGH_PRESSURE_THRESHOLD = 1030.0; // 1030 hPa
+    private static final double LOW_PRESSURE_THRESHOLD = 980.0;   // 980 hPa
 
     public AlertService(WebSocketService webSocketService,
                         AlertMessageRepository alertMessageRepository) {
@@ -40,32 +43,53 @@ public class AlertService {
 
         String deviceId = sensorData.getDeviceId();
 
-        // Yüksek Sıcaklık Uyarısı
+        // High Temperature Alert
         if (sensorData.getTemperature() != null && sensorData.getTemperature() > HIGH_TEMPERATURE_THRESHOLD) {
-            String message = String.format("Cihaz '%s' için yüksek sıcaklık tespit edildi: %.2f°C (Eşik: %.1f°C)",
+            String message = String.format("High temperature detected for device '%s': %.2f°C (Threshold: %.1f°C)",
                     deviceId, sensorData.getTemperature(), HIGH_TEMPERATURE_THRESHOLD);
             createAndSendAlert(sensorData, message, AlertMessage.AlertSeverity.CRITICAL, AlertMessage.AlertType.TEMPERATURE_HIGH);
         }
 
-        // Düşük Sıcaklık Uyarısı
+        // Low Temperature Alert
         if (sensorData.getTemperature() != null && sensorData.getTemperature() < LOW_TEMPERATURE_THRESHOLD) {
-            String message = String.format("Cihaz '%s' için düşük sıcaklık tespit edildi: %.2f°C (Eşik: %.1f°C)",
+            String message = String.format("Low temperature detected for device '%s': %.2f°C (Threshold: %.1f°C)",
                     deviceId, sensorData.getTemperature(), LOW_TEMPERATURE_THRESHOLD);
             createAndSendAlert(sensorData, message, AlertMessage.AlertSeverity.WARNING, AlertMessage.AlertType.TEMPERATURE_LOW);
         }
 
-        // Düşük Pil Seviyesi Uyarısı
+        // Low Battery Level Alert
         if (sensorData.getBatteryLevel() != null && sensorData.getBatteryLevel() < LOW_BATTERY_THRESHOLD) {
-            String message = String.format("Cihaz '%s' için düşük pil seviyesi: %d%% (Eşik: %d%%)",
+            String message = String.format("Low battery level for device '%s': %d%% (Threshold: %d%%)",
                     deviceId, sensorData.getBatteryLevel(), LOW_BATTERY_THRESHOLD);
             createAndSendAlert(sensorData, message, AlertMessage.AlertSeverity.WARNING, AlertMessage.AlertType.BATTERY_LOW);
         }
 
-        // Yüksek Nem Uyarısı
+        // High Humidity Alert
         if (sensorData.getHumidity() != null && sensorData.getHumidity() > HIGH_HUMIDITY_THRESHOLD) {
-            String message = String.format("Cihaz '%s' için yüksek nem tespit edildi: %.2f%% (Eşik: %.1f%%)",
+            String message = String.format("High humidity detected for device '%s': %.2f%% (Threshold: %.1f%%)",
                     deviceId, sensorData.getHumidity(), HIGH_HUMIDITY_THRESHOLD);
             createAndSendAlert(sensorData, message, AlertMessage.AlertSeverity.INFO, AlertMessage.AlertType.HUMIDITY_HIGH);
+        }
+
+        // Low Humidity Alert
+        if (sensorData.getHumidity() != null && sensorData.getHumidity() < LOW_HUMIDITY_THRESHOLD) {
+            String message = String.format("Low humidity detected for device '%s': %.2f%% (Threshold: %.1f%%)",
+                    deviceId, sensorData.getHumidity(), LOW_HUMIDITY_THRESHOLD);
+            createAndSendAlert(sensorData, message, AlertMessage.AlertSeverity.WARNING, AlertMessage.AlertType.HUMIDITY_LOW);
+        }
+
+        // High Pressure Alert
+        if (sensorData.getPressure() != null && sensorData.getPressure() > HIGH_PRESSURE_THRESHOLD) {
+            String message = String.format("High pressure detected for device '%s': %.2f hPa (Threshold: %.1f hPa)",
+                    deviceId, sensorData.getPressure(), HIGH_PRESSURE_THRESHOLD);
+            createAndSendAlert(sensorData, message, AlertMessage.AlertSeverity.WARNING, AlertMessage.AlertType.PRESSURE_HIGH);
+        }
+
+        // Low Pressure Alert
+        if (sensorData.getPressure() != null && sensorData.getPressure() < LOW_PRESSURE_THRESHOLD) {
+            String message = String.format("Low pressure detected for device '%s': %.2f hPa (Threshold: %.1f hPa)",
+                    deviceId, sensorData.getPressure(), LOW_PRESSURE_THRESHOLD);
+            createAndSendAlert(sensorData, message, AlertMessage.AlertSeverity.WARNING, AlertMessage.AlertType.PRESSURE_LOW);
         }
     }
 
