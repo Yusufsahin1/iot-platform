@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./styles/main.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-microchip"></i> IoT Platform</h1>
+            <div class="connection-status">
+                <span id="connection-indicator" class="disconnected"></span>
+                <span id="connection-text">Waiting for connection...</span>
+            </div>
+        </header>
+
+        <div class="dashboard">
+            <div class="sidebar">
+                <div class="filter-section">
+                    <h3>Device Filter</h3>
+                    <select id="device-filter">
+                        <option value="all">All Devices</option>
+                        <!-- Devices will be added by JavaScript -->
+                    </select>
+                </div>
+                
+                <div class="stats-section">
+                    <h3>Statistics</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Devices:</span>
+                        <span id="total-devices" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Active Alerts:</span>
+                        <span id="active-alerts" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Last Update:</span>
+                        <span id="last-update" class="stat-value">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <div class="widget-row">
+                    <div class="widget" id="temperature-widget">
+                        <h3><i class="fas fa-temperature-high"></i> Temperature</h3>
+                        <div class="chart-container">
+                            <canvas id="temperature-chart"></canvas>
+                        </div>
+                        <div class="current-value">
+                            <span id="current-temperature">--</span> °C
+                        </div>
+                    </div>
+                    
+                    <div class="widget" id="humidity-widget">
+                        <h3><i class="fas fa-tint"></i> Humidity</h3>
+                        <div class="chart-container">
+                            <canvas id="humidity-chart"></canvas>
+                        </div>
+                        <div class="current-value">
+                            <span id="current-humidity">--</span> %
+                        </div>
+                    </div>
+                </div>
+
+                <div class="widget-row">
+                    <div class="widget" id="pressure-widget">
+                        <h3><i class="fas fa-compress-alt"></i> Pressure</h3>
+                        <div class="chart-container">
+                            <canvas id="pressure-chart"></canvas>
+                        </div>
+                        <div class="current-value">
+                            <span id="current-pressure">--</span> hPa
+                        </div>
+                    </div>
+                    
+                    <div class="widget" id="battery-widget">
+                        <h3><i class="fas fa-battery-half"></i> Battery Level</h3>
+                        <div class="chart-container">
+                            <canvas id="battery-chart"></canvas>
+                        </div>
+                        <div class="current-value">
+                            <span id="current-battery">--</span> %
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alerts-section">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Alerts</h3>
+                    <div class="alerts-container" id="alerts-container">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./js/app.js"></script>
+</body>
+</html> 

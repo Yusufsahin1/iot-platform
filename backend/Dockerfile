@@ -1,16 +1,13 @@
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
+COPY pom.xml .
+COPY src ./src
 
-COPY . .
+# Spring Boot uygulamasını build et
+RUN mvn clean package -DskipTests
 
-WORKDIR /app/backend
-
-RUN chmod +x ./mvnw
-
-RUN ./mvnw clean package -DskipTests
-
-FROM eclipse-temurin:21-jre-alpine AS final
-WORKDIR /app.
-COPY --from=build /app/backend/target/*.jar app.jar
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

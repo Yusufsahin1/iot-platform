@@ -10,6 +10,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         // Basit bir bellek içi mesaj broker'ı etkinleştirir.
         // "/topic" ile başlayan hedeflere mesaj gönderilmesini sağlar.
@@ -19,9 +20,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         config.setApplicationDestinationPrefixes("/app");
     }
 
+    @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // "/ws" endpoint'ini STOMP bağlantıları için kaydeder.
         // SockJS, WebSocket'i desteklemeyen tarayıcılar için fallback seçenekleri sunar.
-        registry.addEndpoint("/ws").withSockJS();
+        registry.addEndpoint("/ws")
+                .setAllowedOriginPatterns("*") // Tüm kaynaklara izin ver
+                .withSockJS();
     }
 }

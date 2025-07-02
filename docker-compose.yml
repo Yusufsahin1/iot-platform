@@ -1,8 +1,19 @@
 services:
-  app:
+  frontend:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - iot-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     ports:
       - "8080:8080"
     environment:

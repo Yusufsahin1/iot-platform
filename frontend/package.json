@@ -1,0 +1,20 @@
+{
+  "name": "iot-platform-frontend",
+  "version": "1.0.0",
+  "description": "IoT Platform Frontend",
+  "scripts": {
+    "start": "parcel src/index.html",
+    "build": "parcel build src/index.html --dist-dir ./dist --public-url ./",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "parcel": "^2.9.3"
+  },
+  "dependencies": {
+    "chart.js": "^4.3.0",
+    "sockjs-client": "^1.6.1",
+    "webstomp-client": "^1.2.6"
+  }
+} 
