@@ -1,4 +1,3 @@
-// Import required libraries
 import SockJS from 'sockjs-client';
 import webstomp from 'webstomp-client';
 import Chart from 'chart.js/auto';
@@ -12,6 +11,18 @@ const API_URL = `${BACKEND_URL}/api/v1`;
 
 // Locale options for date formatting
 const dateOptions = {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+    timeZone: 'Europe/Istanbul'
+};
+
+// Time-only options for graphs
+const timeOptions = {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
@@ -32,7 +43,10 @@ let sensorDataHistory = {
     battery: []
 };
 let allSensorData = [];
-let alertMessages = []; 
+let realtimeAlertMessages = [];
+let historicalAlertMessages = [];
+let isRealtimeView = true;
+let historicalData = [];
 
 // DOM Elements
 const connectionIndicator = document.getElementById('connection-indicator');
@@ -42,6 +56,12 @@ const totalDevicesElement = document.getElementById('total-devices');
 const activeAlertsElement = document.getElementById('active-alerts');
 const lastUpdateElement = document.getElementById('last-update');
 const alertsContainer = document.getElementById('alerts-container');
+const realtimeBtn = document.getElementById('realtime-btn');
+const historicalBtn = document.getElementById('historical-btn');
+const dateFilterContainer = document.getElementById('date-filter');
+const startDateInput = document.getElementById('start-date');
+const endDateInput = document.getElementById('end-date');
+const applyFilterBtn = document.getElementById('apply-filter');
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
@@ -49,23 +69,81 @@ document.addEventListener('DOMContentLoaded', () => {
     connectWebSocket();
     fetchInitialData();
     setupEventListeners();
+
+    const today = new Date();
+    const lastWeek = new Date();
+    lastWeek.setDate(today.getDate() - 7);
+    
+    startDateInput.valueAsDate = lastWeek;
+    endDateInput.valueAsDate = today;
 });
 
-// Setup event listeners
 function setupEventListeners() {
     deviceFilter.addEventListener('change', (e) => {
         selectedDevice = e.target.value;
-        updateChartsForSelectedDevice();
+        if (isRealtimeView) {
+            updateChartsForSelectedDevice();
+        } else {
+            fetchHistoricalData();
+        }
+    });
+    
+    realtimeBtn.addEventListener('click', () => {
+        if (!isRealtimeView) {
+            toggleView(true);
+        }
+    });
+    
+    historicalBtn.addEventListener('click', () => {
+        if (isRealtimeView) {
+            toggleView(false);
+        }
+    });
+    
+    applyFilterBtn.addEventListener('click', () => {
+        if (!isRealtimeView) {
+            fetchHistoricalData();
+        }
     });
 }
 
-// Extract deviceId from alert message
+// Toggle between realtime and historical view
+function toggleView(realtime) {
+    // If already in the requested view, do nothing
+    if (isRealtimeView === realtime) {
+        return;
+    }
+
+    updateLoadingState(true);
+
+    setTimeout(() => {
+        isRealtimeView = realtime;
+        
+        if (realtime) {
+            realtimeBtn.classList.add('active');
+            historicalBtn.classList.remove('active');
+            dateFilterContainer.style.display = 'none';
+            document.body.classList.remove('historical-view');
+            document.getElementById('info-container').style.display = 'none';
+            // Restore real-time alerts
+            updateAlertsForSelectedDevice();
+        } else {
+            historicalBtn.classList.add('active');
+            realtimeBtn.classList.remove('active');
+            dateFilterContainer.style.display = 'block';
+            dateFilterContainer.classList.add('visible');
+            document.body.classList.add('historical-view');
+            document.getElementById('info-container').style.display = 'block';
+            fetchHistoricalData();
+        }
+    }, 10);
+}
+
 function extractDeviceIdFromMessage(message) {
     const deviceIdMatch = message.match(/device '([^']+)'/);
     return deviceIdMatch ? deviceIdMatch[1] : null;
 }
 
-// Initialize charts
 function initCharts() {
     // Temperature chart
     charts.temperature = new Chart(
@@ -250,7 +328,6 @@ function initCharts() {
     );
 }
 
-// Connect to WebSocket
 function connectWebSocket() {
     const socket = new SockJS(WS_ENDPOINT);
     stompClient = webstomp.over(socket);
@@ -262,10 +339,12 @@ function connectWebSocket() {
         // Subscribe to sensor data topic
         stompClient.subscribe('/topic/sensor-data', message => {
             const sensorData = JSON.parse(message.body);
-            processSensorData(sensorData);
+            if (isRealtimeView) {
+                processSensorData(sensorData);
+            }
         });
         
-        // Subscribe to alerts topic
+        // Subscribe to alert topic
         stompClient.subscribe('/topic/alert', message => {
             const alertData = JSON.parse(message.body);
             processAlertData(alertData);
@@ -274,12 +353,11 @@ function connectWebSocket() {
         console.error('WebSocket connection error:', error);
         updateConnectionStatus(false);
         
-        // Try to reconnect after 5 seconds
+        // Retry after 5 seconds
         setTimeout(connectWebSocket, 5000);
     });
 }
 
-// Update connection status indicators
 function updateConnectionStatus(connected) {
     connectionIndicator.className = connected ? 'connected' : 'disconnected';
     connectionText.textContent = connected ? 'Connected' : 'Disconnected';
@@ -288,43 +366,132 @@ function updateConnectionStatus(connected) {
 // Fetch initial data
 async function fetchInitialData() {
     try {
-        // Fetch sensor data
-        const sensorResponse = await fetch(`${API_URL}/sensor-data`);
-        if (!sensorResponse.ok) {
-            throw new Error(`HTTP error! Status: ${sensorResponse.status}`);
-        }
-        
-        const sensorData = await sensorResponse.json();
-        allSensorData = sensorData; // Store all data
-        processInitialData(sensorData);
-        
-        // Fetch alerts data if endpoint exists
-        try {
-            const alertsResponse = await fetch(`${API_URL}/alert-messages`);
-            if (alertsResponse.ok) {
-                const alertsData = await alertsResponse.json();
-                
-                // Process each alert
-                alertsData.forEach(alert => {
-                    // Extract and add deviceId
-                    alert.deviceId = extractDeviceIdFromMessage(alert.message);
-                    alertMessages.push(alert);
-                });
-                
-                // Update alerts UI
-                updateAlertsForSelectedDevice();
+        if (!isRealtimeView) {
+            // Fetch sensor data only in historical view
+            const sensorResponse = await fetch(`${API_URL}/sensor-data`);
+            if (!sensorResponse.ok) {
+                throw new Error(`HTTP error! Status: ${sensorResponse.status}`);
             }
-        } catch (alertError) {
-            console.log('Alert endpoint might not exist or other error:', alertError);
+            
+            const sensorData = await sensorResponse.json();
+            allSensorData = sensorData;
+            processInitialData(sensorData);
+            
+            // Fetch initial alerts
+            try {
+                const alertsResponse = await fetch(`${API_URL}/alert-messages`);
+                if (alertsResponse.ok) {
+                    const alertsData = await alertsResponse.json();
+                    
+                    // Process each alert
+                    alertsData.forEach(alert => {
+                        // Extract and add deviceId
+                        alert.deviceId = extractDeviceIdFromMessage(alert.message);
+                        historicalAlertMessages.push(alert); // Store in historicalAlertMessages
+                    });
+                    
+                    // Update alerts UI
+                    updateAlertsForSelectedDevice();
+                }
+            } catch (alertError) {
+                console.log('Alert endpoint might not exist or other error:', alertError);
+            }
+        } else {
+            allSensorData = [];
+            realtimeAlertMessages = [];
+            processInitialData([]);
         }
     } catch (error) {
         console.error('Error fetching initial data:', error);
     }
 }
 
-// Update charts based on selected device
-function updateChartsForSelectedDevice() {
-    // Clear current chart data
+async function fetchHistoricalData() {
+    try {
+        updateLoadingState(true);
+        
+        // Sensor data URL
+        let url = `${API_URL}/sensor-data`;
+        if (selectedDevice !== 'all') {
+            url = `${API_URL}/sensor-data/device/${selectedDevice}`;
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        let data = await response.json();
+
+        if (startDateInput.value && endDateInput.value) {
+            const startDate = new Date(startDateInput.value);
+            const endDate = new Date(endDateInput.value);
+            endDate.setHours(23, 59, 59, 999); // Set to end of day
+            
+            data = data.filter(item => {
+                const itemDate = new Date(item.timestamp);
+                return itemDate >= startDate && itemDate <= endDate;
+            });
+        }
+
+        setTimeout(() => {
+            processHistoricalData(data);
+
+            fetchHistoricalAlerts();
+        }, 10);
+        
+    } catch (error) {
+        console.error('Error fetching historical data:', error);
+        updateLoadingState(false);
+    }
+}
+
+async function fetchHistoricalAlerts() {
+    try {
+        // Alerts URL
+        let alertsUrl = `${API_URL}/alert-messages`;
+        if (selectedDevice !== 'all') {
+            alertsUrl = `${API_URL}/alert-messages/device/${selectedDevice}`;
+        }
+        
+        const alertsResponse = await fetch(alertsUrl);
+        if (alertsResponse.ok) {
+            let alertsData = await alertsResponse.json();
+            
+            // Filter alerts by date
+            if (startDateInput.value && endDateInput.value) {
+                const startDate = new Date(startDateInput.value);
+                const endDate = new Date(endDateInput.value);
+                endDate.setHours(23, 59, 59, 999);
+                
+                alertsData = alertsData.filter(alert => {
+                    const alertDate = new Date(alert.timestamp);
+                    return alertDate >= startDate && alertDate <= endDate;
+                });
+            }
+
+            historicalAlertMessages = [];
+
+            alertsData.forEach(alert => {
+                alert.deviceId = extractDeviceIdFromMessage(alert.message);
+                historicalAlertMessages.push(alert);
+            });
+
+            updateAlertsForSelectedDevice();
+        }
+    } catch (alertError) {
+        console.error('Error fetching alert data:', alertError);
+    } finally {
+        updateLoadingState(false);
+    }
+}
+
+function updateLoadingState(isLoading) {
+    applyFilterBtn.disabled = isLoading;
+    applyFilterBtn.textContent = isLoading ? 'Loading...' : 'Apply Filter';
+}
+
+function processHistoricalData(data) {
     sensorDataHistory = {
         temperature: [],
         humidity: [],
@@ -332,17 +499,121 @@ function updateChartsForSelectedDevice() {
         battery: []
     };
     
-    // Filter data based on selected device
+    // Sort data by timestamp
+    data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+    // Show data count information
+    const dataCountInfo = document.createElement('div');
+    dataCountInfo.className = 'data-count-info';
+    dataCountInfo.textContent = `${data.length} records found. Date range: ${startDateInput.value} - ${endDateInput.value}${selectedDevice !== 'all' ? `, Device: ${selectedDevice}` : ', All Devices'}`;
+    
+    // Add info message to the page
+    const infoContainer = document.getElementById('info-container');
+    if (infoContainer) {
+        infoContainer.innerHTML = '';
+        infoContainer.appendChild(dataCountInfo);
+    }
+    
+    // Limit data points to prevent overcrowding and improve performance
+    const maxDataPoints = 20; // Reduced from 30 to 20 for better performance
+    let step = 1;
+    
+    if (data.length > maxDataPoints) {
+        step = Math.ceil(data.length / maxDataPoints);
+        
+        // Add sampling info if data is sampled
+        if (infoContainer && step > 1) {
+            const samplingInfo = document.createElement('div');
+            samplingInfo.className = 'sampling-info';
+            samplingInfo.textContent = `Showing every ${step} records for better readability.`;
+            infoContainer.appendChild(samplingInfo);
+        }
+    }
+
+    const processedData = {
+        temperature: [],
+        humidity: [],
+        pressure: [],
+        battery: []
+    };
+    
+    // Process data
+    for (let i = 0; i < data.length; i += step) {
+        const sensorData = data[i];
+        const timestamp = new Date(sensorData.timestamp);
+        
+        // Format timestamp
+        const timeLabel = timestamp.toLocaleString('tr-TR', {
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        }).replace(',', '');
+        
+        if (sensorData.temperature !== undefined) {
+            processedData.temperature.push({
+                x: timeLabel,
+                y: sensorData.temperature,
+                timestamp: timestamp
+            });
+        }
+        
+        if (sensorData.humidity !== undefined) {
+            processedData.humidity.push({
+                x: timeLabel,
+                y: sensorData.humidity,
+                timestamp: timestamp
+            });
+        }
+        
+        if (sensorData.pressure !== undefined) {
+            processedData.pressure.push({
+                x: timeLabel,
+                y: sensorData.pressure,
+                timestamp: timestamp
+            });
+        }
+        
+        if (sensorData.batteryLevel !== undefined) {
+            processedData.battery.push({
+                x: timeLabel,
+                y: sensorData.batteryLevel,
+                timestamp: timestamp
+            });
+        }
+    }
+
+    sensorDataHistory = processedData;
+
+    setTimeout(() => {
+        updateAllCharts();
+        updateCurrentValues();
+
+        if (data.length > 0) {
+            const lastDataPoint = data[data.length - 1];
+            const lastTimestamp = new Date(lastDataPoint.timestamp);
+            lastUpdateElement.textContent = lastTimestamp.toLocaleString('tr-TR', dateOptions);
+        }
+    }, 10);
+}
+
+function updateChartsForSelectedDevice() {
+    sensorDataHistory = {
+        temperature: [],
+        humidity: [],
+        pressure: [],
+        battery: []
+    };
+
     const filteredData = selectedDevice === 'all' 
         ? allSensorData 
         : allSensorData.filter(item => item.deviceId === selectedDevice);
-    
-    // Process the filtered data
+
     filteredData.forEach(sensorData => {
         processSensorData(sensorData, false);
     });
-    
-    // Clear and update alerts for selected device
+
     updateAlertsForSelectedDevice();
     
     // Update UI
@@ -360,8 +631,11 @@ function updateAlertsForSelectedDevice() {
     // Reset active alerts counter
     activeAlerts = 0;
     
+    // Seç hangi alert listesini kullanacağımızı
+    const currentAlertMessages = isRealtimeView ? realtimeAlertMessages : historicalAlertMessages;
+    
     // Ensure all alert messages have deviceId property
-    alertMessages.forEach(alert => {
+    currentAlertMessages.forEach(alert => {
         if (!alert.deviceId) {
             alert.deviceId = extractDeviceIdFromMessage(alert.message);
         }
@@ -369,12 +643,13 @@ function updateAlertsForSelectedDevice() {
     
     // Filter alerts for selected device
     const filteredAlerts = selectedDevice === 'all' 
-        ? alertMessages 
-        : alertMessages.filter(alert => alert.deviceId === selectedDevice);
+        ? currentAlertMessages 
+        : currentAlertMessages.filter(alert => alert.deviceId === selectedDevice);
     
+    // Sort alerts by timestamp in descending order (newest first)
+    filteredAlerts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     
     filteredAlerts.forEach(alertData => {
-        
         const alertElement = document.createElement('div');
         alertElement.className = `alert-item ${alertData.severity.toLowerCase()}`;
         
@@ -384,19 +659,19 @@ function updateAlertsForSelectedDevice() {
         
         const timeElement = document.createElement('div');
         timeElement.className = 'alert-time';
-        const timestamp = new Date();
-        timeElement.textContent = timestamp.toLocaleTimeString('tr-TR', dateOptions);
+        const timestamp = alertData.timestamp ? new Date(alertData.timestamp) : new Date();
+        timeElement.textContent = timestamp.toLocaleString('tr-TR', dateOptions);
         
         alertElement.appendChild(messageElement);
         alertElement.appendChild(timeElement);
         
-        alertsContainer.insertBefore(alertElement, alertsContainer.firstChild);
+        alertsContainer.appendChild(alertElement);
         activeAlerts++;
     });
     
     activeAlertsElement.textContent = activeAlerts;
     
-    // Limit to 10 alerts
+    // Limit to 10 alerts in UI but keep all in memory
     while (alertsContainer.children.length > 10) {
         alertsContainer.removeChild(alertsContainer.lastChild);
     }
@@ -458,86 +733,176 @@ function processSensorData(sensorData, updateCharts = true) {
         totalDevicesElement.textContent = devicesList.size;
     }
     
-    // Format timestamp - use current time instead of backend timestamp
-    const timestamp = new Date();
-    const timeLabel = timestamp.toLocaleTimeString('tr-TR', dateOptions);
-    
-    // Add data to history (limit to 20 points)
-    if (sensorData.temperature !== undefined) {
-        sensorDataHistory.temperature.push({
-            x: timeLabel,
-            y: sensorData.temperature,
-            timestamp: timestamp
-        });
-        if (sensorDataHistory.temperature.length > 20) {
-            sensorDataHistory.temperature.shift();
+    // Format timestamp using backend timestamp
+    const timestamp = new Date(sensorData.timestamp);
+    const timeLabel = timestamp.toLocaleTimeString('tr-TR', timeOptions);
+
+    // For "all" devices, calculate average values for the same timestamp
+    if (selectedDevice === 'all') {
+        // Find all sensor data with the same timestamp
+        const sameTimeData = allSensorData.filter(data => 
+            new Date(data.timestamp).getTime() === timestamp.getTime()
+        );
+
+        if (sameTimeData.length > 0) {
+            // Calculate averages
+            const avgTemp = sameTimeData.reduce((sum, data) => sum + (data.temperature || 0), 0) / sameTimeData.length;
+            const avgHumidity = sameTimeData.reduce((sum, data) => sum + (data.humidity || 0), 0) / sameTimeData.length;
+            const avgPressure = sameTimeData.reduce((sum, data) => sum + (data.pressure || 0), 0) / sameTimeData.length;
+            const avgBattery = sameTimeData.reduce((sum, data) => sum + (data.batteryLevel || 0), 0) / sameTimeData.length;
+
+            // Update history with averages
+            if (!isNaN(avgTemp)) {
+                const existingTempIndex = sensorDataHistory.temperature.findIndex(item => item.x === timeLabel);
+                if (existingTempIndex === -1) {
+                    sensorDataHistory.temperature.push({ x: timeLabel, y: avgTemp, timestamp });
+                } else {
+                    sensorDataHistory.temperature[existingTempIndex].y = avgTemp;
+                }
+            }
+
+            if (!isNaN(avgHumidity)) {
+                const existingHumIndex = sensorDataHistory.humidity.findIndex(item => item.x === timeLabel);
+                if (existingHumIndex === -1) {
+                    sensorDataHistory.humidity.push({ x: timeLabel, y: avgHumidity, timestamp });
+                } else {
+                    sensorDataHistory.humidity[existingHumIndex].y = avgHumidity;
+                }
+            }
+
+            if (!isNaN(avgPressure)) {
+                const existingPressIndex = sensorDataHistory.pressure.findIndex(item => item.x === timeLabel);
+                if (existingPressIndex === -1) {
+                    sensorDataHistory.pressure.push({ x: timeLabel, y: avgPressure, timestamp });
+                } else {
+                    sensorDataHistory.pressure[existingPressIndex].y = avgPressure;
+                }
+            }
+
+            if (!isNaN(avgBattery)) {
+                const existingBattIndex = sensorDataHistory.battery.findIndex(item => item.x === timeLabel);
+                if (existingBattIndex === -1) {
+                    sensorDataHistory.battery.push({ x: timeLabel, y: avgBattery, timestamp });
+                } else {
+                    sensorDataHistory.battery[existingBattIndex].y = avgBattery;
+                }
+            }
+        }
+    } else {
+        // Single device - process data as before
+        if (sensorData.temperature !== undefined) {
+            sensorDataHistory.temperature.push({
+                x: timeLabel,
+                y: sensorData.temperature,
+                timestamp: timestamp
+            });
+        }
+        
+        if (sensorData.humidity !== undefined) {
+            sensorDataHistory.humidity.push({
+                x: timeLabel,
+                y: sensorData.humidity,
+                timestamp: timestamp
+            });
+        }
+        
+        if (sensorData.pressure !== undefined) {
+            sensorDataHistory.pressure.push({
+                x: timeLabel,
+                y: sensorData.pressure,
+                timestamp: timestamp
+            });
+        }
+        
+        if (sensorData.batteryLevel !== undefined) {
+            sensorDataHistory.battery.push({
+                x: timeLabel,
+                y: sensorData.batteryLevel,
+                timestamp: timestamp
+            });
         }
     }
-    
-    if (sensorData.humidity !== undefined) {
-        sensorDataHistory.humidity.push({
-            x: timeLabel,
-            y: sensorData.humidity,
-            timestamp: timestamp
-        });
-        if (sensorDataHistory.humidity.length > 20) {
-            sensorDataHistory.humidity.shift();
+
+    // Limit history size for all metrics
+    const maxPoints = 20;
+    ['temperature', 'humidity', 'pressure', 'battery'].forEach(metric => {
+        if (sensorDataHistory[metric].length > maxPoints) {
+            sensorDataHistory[metric] = sensorDataHistory[metric].slice(-maxPoints);
         }
-    }
-    
-    if (sensorData.pressure !== undefined) {
-        sensorDataHistory.pressure.push({
-            x: timeLabel,
-            y: sensorData.pressure,
-            timestamp: timestamp
-        });
-        if (sensorDataHistory.pressure.length > 20) {
-            sensorDataHistory.pressure.shift();
-        }
-    }
-    
-    if (sensorData.batteryLevel !== undefined) {
-        sensorDataHistory.battery.push({
-            x: timeLabel,
-            y: sensorData.batteryLevel,
-            timestamp: timestamp
-        });
-        if (sensorDataHistory.battery.length > 20) {
-            sensorDataHistory.battery.shift();
-        }
-    }
-    
-    // Update last update time
-    lastUpdateElement.textContent = timeLabel;
+    });
     
     // Update charts if needed
     if (updateCharts) {
         updateAllCharts();
         updateCurrentValues();
+        
+        // Update last update time
+        lastUpdateElement.textContent = timeLabel;
     }
 }
 
 // Update all charts
 function updateAllCharts() {
-    // Update temperature chart
-    charts.temperature.data.labels = sensorDataHistory.temperature.map(d => d.x);
-    charts.temperature.data.datasets[0].data = sensorDataHistory.temperature.map(d => d.y);
-    charts.temperature.update();
+    // Configure chart options based on view mode
+    const xAxisOptions = isRealtimeView ? {
+        display: true,
+        title: {
+            display: true,
+            text: 'Time'
+        }
+    } : {
+        display: true,
+        title: {
+            display: true,
+            text: 'Date/Time'
+        },
+        ticks: {
+            maxRotation: 45,
+            minRotation: 45,
+            autoSkip: true,
+            maxTicksLimit: 10 // Reduced from 15 to 10 for better performance
+        }
+    };
     
-    // Update humidity chart
-    charts.humidity.data.labels = sensorDataHistory.humidity.map(d => d.x);
-    charts.humidity.data.datasets[0].data = sensorDataHistory.humidity.map(d => d.y);
-    charts.humidity.update();
+    // Update chart scales
+    Object.values(charts).forEach(chart => {
+        chart.options.scales.x = xAxisOptions;
+        chart.options.plugins.tooltip = {
+            callbacks: {
+                title: function(context) {
+                    return context[0].label;
+                }
+            }
+        };
+        
+        // Set animation duration based on view mode
+        chart.options.animation = {
+            duration: isRealtimeView ? 800 : 0 // Disable animations in historical view
+        };
+    });
     
-    // Update pressure chart
-    charts.pressure.data.labels = sensorDataHistory.pressure.map(d => d.x);
-    charts.pressure.data.datasets[0].data = sensorDataHistory.pressure.map(d => d.y);
-    charts.pressure.update();
-    
-    // Update battery chart
-    charts.battery.data.labels = sensorDataHistory.battery.map(d => d.x);
-    charts.battery.data.datasets[0].data = sensorDataHistory.battery.map(d => d.y);
-    charts.battery.update();
+    // Batch update all charts to improve performance
+    requestAnimationFrame(() => {
+        // Update temperature chart
+        charts.temperature.data.labels = sensorDataHistory.temperature.map(d => d.x);
+        charts.temperature.data.datasets[0].data = sensorDataHistory.temperature.map(d => d.y);
+        charts.temperature.update('none'); // Use 'none' mode for better performance
+        
+        // Update humidity chart
+        charts.humidity.data.labels = sensorDataHistory.humidity.map(d => d.x);
+        charts.humidity.data.datasets[0].data = sensorDataHistory.humidity.map(d => d.y);
+        charts.humidity.update('none');
+        
+        // Update pressure chart
+        charts.pressure.data.labels = sensorDataHistory.pressure.map(d => d.x);
+        charts.pressure.data.datasets[0].data = sensorDataHistory.pressure.map(d => d.y);
+        charts.pressure.update('none');
+        
+        // Update battery chart
+        charts.battery.data.labels = sensorDataHistory.battery.map(d => d.x);
+        charts.battery.data.datasets[0].data = sensorDataHistory.battery.map(d => d.y);
+        charts.battery.update('none');
+    });
 }
 
 // Update device list in filter dropdown
@@ -597,54 +962,24 @@ function updateCurrentValues() {
 
 // Process alert data
 function processAlertData(alertData) {
-    // Extract deviceId from message (format: "... device 'deviceId': ...")
-    const deviceId = extractDeviceIdFromMessage(alertData.message);
-    
-    // Add deviceId to alertData for filtering
-    alertData.deviceId = deviceId;
-    
-    // Add to alerts array
-    alertMessages.push(alertData);
-    
-    // Limit stored alerts to prevent memory issues
-    if (alertMessages.length > 50) {
-        alertMessages.shift();
+    // If in historical view, ignore real-time alerts
+    if (!isRealtimeView) {
+        return;
     }
-    
+
+    // Extract deviceId from the alert message
+    const deviceId = extractDeviceIdFromMessage(alertData.message);
+    if (deviceId) {
+        alertData.deviceId = deviceId;
+    }
+
+    // Add the new alert to the beginning of the real-time array
+    realtimeAlertMessages.unshift(alertData);
+
     // Skip if not matching selected device
     if (selectedDevice !== 'all' && deviceId !== selectedDevice) {
         return;
     }
-    
-    // Create alert element
-    const alertElement = document.createElement('div');
-    alertElement.className = `alert-item ${alertData.severity.toLowerCase()}`;
-    
-    // Create message
-    const messageElement = document.createElement('div');
-    messageElement.className = 'alert-message';
-    messageElement.textContent = alertData.message;
-    
-    // Create timestamp - use current time
-    const timeElement = document.createElement('div');
-    timeElement.className = 'alert-time';
-    // Use the current time instead of the backend timestamp
-    const timestamp = new Date();
-    timeElement.textContent = timestamp.toLocaleTimeString('tr-TR', dateOptions);
-    
-    // Add elements to alert
-    alertElement.appendChild(messageElement);
-    alertElement.appendChild(timeElement);
-    
-    // Add to container (at the top)
-    alertsContainer.insertBefore(alertElement, alertsContainer.firstChild);
-    
-    // Limit to 10 alerts
-    while (alertsContainer.children.length > 10) {
-        alertsContainer.removeChild(alertsContainer.lastChild);
-    }
-    
-    // Update active alerts counter
-    activeAlerts++;
-    activeAlertsElement.textContent = activeAlerts;
+
+    updateAlertsForSelectedDevice();
 }

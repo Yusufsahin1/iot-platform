@@ -12,20 +12,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // Basit bir bellek içi mesaj broker'ı etkinleştirir.
-        // "/topic" ile başlayan hedeflere mesaj gönderilmesini sağlar.
         config.enableSimpleBroker("/topic");
-        // Client'lardan sunucuya gelen mesajların prefix'ini ayarlar.
-        // Örneğin, client @MessageMapping("/app/sendData") gibi bir adrese mesaj gönderebilir.
         config.setApplicationDestinationPrefixes("/app");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // "/ws" endpoint'ini STOMP bağlantıları için kaydeder.
-        // SockJS, WebSocket'i desteklemeyen tarayıcılar için fallback seçenekleri sunar.
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*") // Tüm kaynaklara izin ver
+                .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
 }

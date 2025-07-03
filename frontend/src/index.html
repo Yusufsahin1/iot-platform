@@ -22,9 +22,28 @@
                 <div class="filter-section">
                     <h3>Device Filter</h3>
                     <select id="device-filter">
-                        <option value="all">All Devices</option>
+                        <option value="all">All Devices (Average)</option>
                         <!-- Devices will be added by JavaScript -->
                     </select>
+                </div>
+                
+                <div class="data-view-section">
+                    <h3>Data View</h3>
+                    <div class="view-toggle">
+                        <button id="realtime-btn" class="view-btn active">Real-time</button>
+                        <button id="historical-btn" class="view-btn">Historical</button>
+                    </div>
+                    <div id="date-filter" class="date-filter" style="display: none;">
+                        <div class="date-input">
+                            <label for="start-date">Start Date:</label>
+                            <input type="date" id="start-date">
+                        </div>
+                        <div class="date-input">
+                            <label for="end-date">End Date:</label>
+                            <input type="date" id="end-date">
+                        </div>
+                        <button id="apply-filter" class="filter-btn">Apply Filter</button>
+                    </div>
                 </div>
                 
                 <div class="stats-section">
@@ -42,62 +61,66 @@
                         <span id="last-update" class="stat-value">-</span>
                     </div>
                 </div>
+
+                <!-- Alerts moved to floating panel -->
             </div>
 
             <div class="main-content">
-                <div class="widget-row">
-                    <div class="widget" id="temperature-widget">
-                        <h3><i class="fas fa-temperature-high"></i> Temperature</h3>
-                        <div class="chart-container">
-                            <canvas id="temperature-chart"></canvas>
+                <div class="content-left">
+                
+                    <div class="widget-row">
+                        <div class="widget" id="temperature-widget">
+                            <h3><i class="fas fa-temperature-high"></i> Temperature</h3>
+                            <div class="chart-container">
+                                <canvas id="temperature-chart"></canvas>
+                            </div>
+                            <div class="current-value">
+                                <span id="current-temperature">--</span> °C
+                            </div>
                         </div>
-                        <div class="current-value">
-                            <span id="current-temperature">--</span> °C
+                        
+                        <div class="widget" id="humidity-widget">
+                            <h3><i class="fas fa-tint"></i> Humidity</h3>
+                            <div class="chart-container">
+                                <canvas id="humidity-chart"></canvas>
+                            </div>
+                            <div class="current-value">
+                                <span id="current-humidity">--</span> %
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="widget" id="humidity-widget">
-                        <h3><i class="fas fa-tint"></i> Humidity</h3>
-                        <div class="chart-container">
-                            <canvas id="humidity-chart"></canvas>
-                        </div>
-                        <div class="current-value">
-                            <span id="current-humidity">--</span> %
-                        </div>
-                    </div>
-                </div>
 
-                <div class="widget-row">
-                    <div class="widget" id="pressure-widget">
-                        <h3><i class="fas fa-compress-alt"></i> Pressure</h3>
-                        <div class="chart-container">
-                            <canvas id="pressure-chart"></canvas>
+                    <div class="widget-row">
+                        <div class="widget" id="pressure-widget">
+                            <h3><i class="fas fa-compress-alt"></i> Pressure</h3>
+                            <div class="chart-container">
+                                <canvas id="pressure-chart"></canvas>
+                            </div>
+                            <div class="current-value">
+                                <span id="current-pressure">--</span> hPa
+                            </div>
                         </div>
-                        <div class="current-value">
-                            <span id="current-pressure">--</span> hPa
+                        
+                        <div class="widget" id="battery-widget">
+                            <h3><i class="fas fa-battery-half"></i> Battery Level</h3>
+                            <div class="chart-container">
+                                <canvas id="battery-chart"></canvas>
+                            </div>
+                            <div class="current-value">
+                                <span id="current-battery">--</span> %
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="widget" id="battery-widget">
-                        <h3><i class="fas fa-battery-half"></i> Battery Level</h3>
-                        <div class="chart-container">
-                            <canvas id="battery-chart"></canvas>
-                        </div>
-                        <div class="current-value">
-                            <span id="current-battery">--</span> %
-                        </div>
-                    </div>
-                </div>
-
-                <div class="alerts-section">
+                </div> <!-- end of content-left -->
+                <div class="alerts-section alerts-side">
+                    <div id="info-container" class="info-container"></div>
                     <h3><i class="fas fa-exclamation-triangle"></i> Alerts</h3>
-                    <div class="alerts-container" id="alerts-container">
-                    </div>
+                    <div class="alerts-container" id="alerts-container"></div>
                 </div>
-            </div>
+            </div> <!-- end of main-content -->
         </div>
     </div>
-
+ 
     <script type="module" src="./js/app.js"></script>
 </body>
 </html> 

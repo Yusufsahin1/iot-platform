@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class AlertService {
@@ -32,6 +34,20 @@ public class AlertService {
                         AlertMessageRepository alertMessageRepository) {
         this.webSocketService = webSocketService;
         this.alertMessageRepository = alertMessageRepository;
+    }
+
+    public List<AlertMessageDto> getAllAlertMessages() {
+        return alertMessageRepository.findAll().stream()
+                .map(AlertMessageDtoConverter::toDto)
+                .collect(Collectors.toList());
+    }
+    
+    public List<AlertMessageDto> getAlertMessagesByDeviceId(String deviceId) {
+        return alertMessageRepository.findAll().stream()
+                .filter(alert -> alert.getSensorData() != null && 
+                        alert.getSensorData().getDeviceId().equals(deviceId))
+                .map(AlertMessageDtoConverter::toDto)
+                .collect(Collectors.toList());
     }
 
     @Transactional
