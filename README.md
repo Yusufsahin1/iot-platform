@@ -1,11 +1,13 @@
 
 # IoT Platform
 
+**EN**<br>
 This project is a full-stack IoT platform designed to collect, process, visualize, store data from various IoT devices in real time, and generate alerts for abnormal situations.
 
+**TR**<br>
 Bu proje, çeşitli IoT cihazlarından gelen verileri gerçek zamanlı olarak toplamak, işlemek, görselleştirmek, depolamak ve anormal durumlar için uyarılar üretmek üzere tasarlanmış bir full-stack IoT platformudur.
 
-![Video]
+https://github.com/user-attachments/assets/364b66b2-756c-4a4a-bd6d-7a9df8dc680b
 
 ---
 
@@ -46,14 +48,18 @@ Bu proje, çeşitli IoT cihazlarından gelen verileri gerçek zamanlı olarak to
 The platform processes data in a clear, sequential flow:
 
 1.  **Data Ingestion**: IoT devices (or the built-in simulator) send sensor data (e.g., temperature, humidity) to an `Apache Kafka` topic named `sensor-data`.
+
 2.  **Backend Processing**:
     - The `KafkaConsumer` service listens for new messages on the Kafka topic.
     - Upon receiving data, it passes it to the `SensorDataService`, which saves the data to the `PostgreSQL` database.
+
 3.  **Alert Generation**:
     - After saving, the `AlertService` checks the data against predefined thresholds (e.g., high temperature, low battery).
     - If a condition is met, it generates an alert, stores it in the database, and prepares it for real-time notification.
+
 4.  **Real-time Communication**:
     - Both the raw sensor data and any generated alerts are pushed from the backend to the frontend in real time using `WebSockets`.
+
 5.  **Live Visualization**:
     - The frontend receives the data via WebSocket and instantly updates the dashboard charts and alert notifications, providing a live view of the IoT device status.
 
@@ -86,14 +92,14 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Türkçe
 
-_### ✨ Özellikler
+### ✨ Özellikler
 
 - **Gerçek Zamanlı Veri İşleme**: Apache Kafka aracılığıyla sensör verilerinin anlık olarak alınması ve işlenmesi.
 - **Canlı Gösterge Paneli**: Web tabanlı arayüz üzerinden sensör verilerinin (sıcaklık, nem, basınç vb.) grafiklerle anlık olarak izlenmesi.
 - **Anlık İletişim (WebSocket)**: Sunucu (backend) ve istemci (frontend) arasında WebSocket teknolojisi ile kurulan anlık ve çift yönlü iletişim.
 - **Otomatik Uyarı Sistemi**: Sıcaklığın aşırı yükselmesi veya pilin zayıflaması gibi önceden tanımlanmış anormal durumlarda otomatik olarak uyarılar oluşturulması.
 - **Veri Depolama**: Tüm sensör verilerinin ve oluşturulan uyarıların PostgreSQL veritabanında güvenle saklanması.
-- **Docker ile Kolay Kurulum**: Projenin Docker ve Docker Compose ile konteyner haline getirilmesi sayesinde tek komutla hızlı ve kolay kurulum imkanı._
+- **Docker ile Kolay Kurulum**: Projenin Docker ve Docker Compose ile konteyner haline getirilmesi sayesinde tek komutla hızlı ve kolay kurulum imkanı.
 
 ### ⚙️ Teknoloji Yığını
 
@@ -115,21 +121,25 @@ _### ✨ Özellikler
 - **DevOps / Konteynerleştirme**:
     - Docker & Docker Compose
 
-_### 📊 Veri Akışı
+### 📊 Veri Akışı
 
 Platform, verileri net ve sıralı bir akışla işler:
 
 1.  **Veri Alımı**: IoT cihazları (veya yerleşik simülatör), `sensor-data` adlı `Apache Kafka` konusuna (topic) sensör verilerini (ör. sıcaklık, nem) gönderir.
+
 2.  **Backend İşlemleri**:
     - `KafkaConsumer` servisi, Kafka topiğindeki yeni mesajları dinler.
     - Veriyi aldığında, `PostgreSQL` veritabanına kaydeden `SensorDataService`'e iletir.
+
 3.  **Uyarı Üretimi**:
     - Kayıttan sonra, `AlertService` veriyi önceden tanımlanmış eşiklere (ör. yüksek sıcaklık, düşük pil) göre kontrol eder.
     - Bir koşul karşılanırsa, bir uyarı oluşturur, veritabanında saklar ve gerçek zamanlı bildirim için hazırlar.
+
 4.  **Gerçek Zamanlı İletişim**:
     - Hem ham sensör verileri hem de oluşturulan uyarılar, `WebSocket` kullanılarak backend'den frontend'e gerçek zamanlı olarak gönderilir.
+    
 5.  **Canlı Görselleştirme**:
-    - Frontend, verileri WebSocket aracılığıyla alır ve pano grafiklerini ve uyarı bildirimlerini anında güncelleyerek IoT cihaz durumunun canlı bir görünümünü sağlar._
+    - Frontend, verileri WebSocket aracılığıyla alır ve pano grafiklerini ve uyarı bildirimlerini anında güncelleyerek IoT cihaz durumunun canlı bir görünümünü sağlar.
 
 ### 🚀 Projeyi Çalıştırma
 
@@ -152,6 +162,6 @@ Bu projeyi çalıştırmak için makinenizde Docker ve Docker Compose'un kurulu 
     -   **Backend API**: Backend servisi `http://localhost:8080` adresinde çalışmaktadır.
     -   **Kafka**: Kafka `localhost:9092` adresinde çalışmaktadır.
 
-_### ⚖️ Lisans
+### ⚖️ Lisans
 
-Bu proje MIT Lisansı ile lisanslanmıştır. Detaylar için [LICENSE](LICENSE) dosyasına bakınız._
+Bu proje MIT Lisansı ile lisanslanmıştır. Detaylar için [LICENSE](LICENSE) dosyasına bakınız.
