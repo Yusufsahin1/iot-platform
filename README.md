@@ -22,6 +22,7 @@ https://github.com/user-attachments/assets/364b66b2-756c-4a4a-bd6d-7a9df8dc680b
 - **Data Storage**: All sensor data and triggered alerts are securely stored in a PostgreSQL database for historical access and analysis.
 - **Easy Deployment with Docker**: Fully containerized with Docker and Docker Compose, enabling quick and easy setup with a single command.
 
+> **Note**: This project uses simulated data for demonstration and testing purposes. The data generation logic is handled by the `SensorDataProducer` service on the backend, which periodically sends sample sensor readings to the Kafka topic.
 
 ### ⚙️ Tech Stack
 
@@ -100,6 +101,8 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - **Otomatik Uyarı Sistemi**: Sıcaklığın aşırı yükselmesi veya pilin zayıflaması gibi önceden tanımlanmış anormal durumlarda otomatik olarak uyarılar oluşturulması.
 - **Veri Depolama**: Tüm sensör verilerinin ve oluşturulan uyarıların PostgreSQL veritabanında güvenle saklanması.
 - **Docker ile Kolay Kurulum**: Projenin Docker ve Docker Compose ile konteyner haline getirilmesi sayesinde tek komutla hızlı ve kolay kurulum imkanı.
+
+> **Not**: Bu proje, gösterim ve test amacıyla simüle edilmiş veriler kullanmaktadır. Veri üretme mantığı, periyodik olarak Kafka konusuna örnek sensör okumaları gönderen backend'deki `SensorDataProducer` servisi tarafından yönetilmektedir.
 
 ### ⚙️ Teknoloji Yığını
 
